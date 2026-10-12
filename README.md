@@ -1,4 +1,4 @@
-# Ghost Image Comparison
+# Ghost Image Comparison Card
 
 A lightweight before/after image slider for Ghost posts and pages. Save it as a reusable snippet, then pick **Image comparison** from the editor's card menu.
 
@@ -46,9 +46,7 @@ Open <http://127.0.0.1:8937>. Python 3 is only needed for this local preview, wh
 
 ## Verification and limitations
 
-Verified in the browser: mouse dragging, Home/End and arrow keys, independent values for multiple cards, a visible keyboard focus outline, and no horizontal overflow at a 390px viewport. No browser warnings or errors occurred. Touch dragging still needs verification on a physical touch device.
-
-The slider has been tested in a local browser preview. Verification in a live Ghost publication is still pending. It is a reusable HTML snippet, so image URLs are edited in HTML rather than through native image upload controls. Interactive comparisons run on the website, not in email newsletters.
+The slider has been tested in my personal website. Further verification is still pending. It is a reusable HTML snippet, so image URLs are edited in HTML rather than through native image upload controls. Interactive comparisons run on the website, not in email newsletters.
 
 ## Contributing
 
