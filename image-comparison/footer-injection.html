@@ -1,0 +1,141 @@
+<style>
+  .image-comparison { margin: 2em 0; }
+  .image-comparison .image-comparison__images > img {
+    display: block;
+    width: 100%;
+    max-width: none;
+    height: auto;
+    margin: 0;
+    border-radius: 0;
+  }
+  .image-comparison figcaption { margin-top: .75em; text-align: center; font-size: .85em; }
+  .image-comparison__images.is-interactive {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    --comparison-position: 50%;
+  }
+  .image-comparison .is-interactive > .image-comparison__after {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    object-fit: cover;
+  }
+  .image-comparison .is-interactive > .image-comparison__before {
+    position: relative;
+    z-index: 1;
+    clip-path: inset(0 calc(100% - var(--comparison-position)) 0 0);
+  }
+  .image-comparison__label {
+    position: absolute;
+    top: 12px;
+    z-index: 2;
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: #000b;
+    color: #fff;
+    font: 600 14px/1.5 system-ui, sans-serif;
+    pointer-events: none;
+  }
+  .image-comparison__label--before { left: 12px; }
+  .image-comparison__label--after { right: 12px; }
+  .image-comparison__divider {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--comparison-position);
+    z-index: 2;
+    width: 2px;
+    background: #fff;
+    transform: translateX(-50%);
+    box-shadow: 0 0 3px #0008;
+    pointer-events: none;
+  }
+  .image-comparison__divider::after {
+    content: "↔";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    background: #111b;
+    color: #fff;
+    font: 24px/1 system-ui, sans-serif;
+    transform: translate(-50%, -50%);
+    box-sizing: border-box;
+  }
+  .image-comparison .image-comparison__range {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: ew-resize;
+    touch-action: pan-y;
+    direction: ltr;
+  }
+  .image-comparison__images:has(.image-comparison__range:focus-visible) {
+    outline: 3px solid #146ef5;
+    outline-offset: 4px;
+  }
+</style>
+<script>
+  (() => {
+    document.querySelectorAll('.image-comparison').forEach((card) => {
+      const images = card.querySelector('.image-comparison__images');
+      if (!images || images.classList.contains('is-interactive')) return;
+      const beforeLabel = card.dataset.beforeLabel || 'Before';
+      const afterLabel = card.dataset.afterLabel || 'After';
+      const range = document.createElement('input');
+      range.type = 'range';
+      range.min = '0';
+      range.max = '100';
+      range.value = '50';
+      range.className = 'image-comparison__range';
+      range.setAttribute('aria-label', 'Image comparison');
+      const update = () => {
+        images.style.setProperty('--comparison-position', `${range.value}%`);
+        range.setAttribute('aria-valuetext', `${beforeLabel} ${range.value}%, ${afterLabel} ${100 - Number(range.value)}%`);
+      };
+      range.addEventListener('input', update);
+      const move = (event) => {
+        const bounds = images.getBoundingClientRect();
+        range.value = String(Math.round(Math.max(0, Math.min(100, (event.clientX - bounds.left) / bounds.width * 100))));
+        update();
+      };
+      range.addEventListener('pointerdown', (event) => {
+        if (!event.isPrimary || event.button !== 0) return;
+        event.preventDefault();
+        range.focus({preventScroll: true});
+        range.setPointerCapture(event.pointerId);
+        move(event);
+      });
+      range.addEventListener('pointermove', (event) => {
+        if (range.hasPointerCapture(event.pointerId)) move(event);
+      });
+      range.addEventListener('pointerup', (event) => {
+        if (range.hasPointerCapture(event.pointerId)) range.releasePointerCapture(event.pointerId);
+      });
+      const divider = document.createElement('span');
+      divider.className = 'image-comparison__divider';
+      divider.setAttribute('aria-hidden', 'true');
+      images.append(divider);
+      [['before', beforeLabel], ['after', afterLabel]].forEach(([side, text]) => {
+        const label = document.createElement('span');
+        label.className = `image-comparison__label image-comparison__label--${side}`;
+        label.textContent = text;
+        label.setAttribute('aria-hidden', 'true');
+        images.append(label);
+      });
+      images.append(range);
+      images.classList.add('is-interactive');
+      update();
+    });
+  })();
+</script>
