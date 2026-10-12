@@ -1,0 +1,40 @@
+name: Bug report
+description: Something doesn't work or looks wrong.
+labels: [bug]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: What you expected, and what you saw instead. Screenshots help.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Add the card to a post with ...
+        2. Open the post on ...
+        3. Drag the divider ...
+    validations:
+      required: true
+  - type: input
+    id: ghost
+    attributes:
+      label: Ghost version
+      placeholder: e.g. 6.3.0
+    validations:
+      required: true
+  - type: input
+    id: theme
+    attributes:
+      label: Theme
+      placeholder: e.g. Casper 5.9
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and device
+      placeholder: e.g. Safari on iPhone 15, Chrome 141 on Windows 11
+    validations:
+      required: true

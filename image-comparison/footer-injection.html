@@ -13,8 +13,13 @@
     position: relative;
     overflow: hidden;
     isolation: isolate;
+    cursor: ew-resize;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
     --comparison-position: 50%;
   }
+  .image-comparison .is-interactive > img { -webkit-user-drag: none; }
   .image-comparison .is-interactive > .image-comparison__after {
     position: absolute;
     inset: 0;
@@ -52,7 +57,7 @@
     pointer-events: none;
   }
   .image-comparison__divider::after {
-    content: "↔";
+    content: "\2194";
     position: absolute;
     top: 50%;
     left: 50%;
@@ -76,8 +81,7 @@
     height: 100%;
     margin: 0;
     opacity: 0;
-    cursor: ew-resize;
-    touch-action: pan-y;
+    pointer-events: none;
     direction: ltr;
   }
   .image-comparison__images:has(.image-comparison__range:focus-visible) {
@@ -87,18 +91,19 @@
 </style>
 <script>
   (() => {
-    document.querySelectorAll('.image-comparison').forEach((card) => {
+    const setup = (card) => {
       const images = card.querySelector('.image-comparison__images');
       if (!images || images.classList.contains('is-interactive')) return;
       const beforeLabel = card.dataset.beforeLabel || 'Before';
       const afterLabel = card.dataset.afterLabel || 'After';
+      const caption = card.querySelector('figcaption');
       const range = document.createElement('input');
       range.type = 'range';
       range.min = '0';
       range.max = '100';
       range.value = '50';
       range.className = 'image-comparison__range';
-      range.setAttribute('aria-label', 'Image comparison');
+      range.setAttribute('aria-label', card.dataset.label || (caption && caption.textContent.trim()) || 'Image comparison');
       const update = () => {
         images.style.setProperty('--comparison-position', `${range.value}%`);
         range.setAttribute('aria-valuetext', `${beforeLabel} ${range.value}%, ${afterLabel} ${100 - Number(range.value)}%`);
@@ -109,19 +114,42 @@
         range.value = String(Math.round(Math.max(0, Math.min(100, (event.clientX - bounds.left) / bounds.width * 100))));
         update();
       };
-      range.addEventListener('pointerdown', (event) => {
-        if (!event.isPrimary || event.button !== 0) return;
-        event.preventDefault();
+      // Mouse drags immediately. Touch and pen only drag after a sideways
+      // movement, so vertical swipes scroll the page without moving the divider.
+      let drag = null;
+      const start = () => {
+        drag.active = true;
         range.focus({preventScroll: true});
-        range.setPointerCapture(event.pointerId);
+      };
+      images.addEventListener('pointerdown', (event) => {
+        if (!event.isPrimary || event.button !== 0) return;
+        drag = {id: event.pointerId, x: event.clientX, y: event.clientY, active: false};
+        images.setPointerCapture(event.pointerId);
+        if (event.pointerType === 'mouse') {
+          event.preventDefault();
+          start();
+          move(event);
+        }
+      });
+      images.addEventListener('pointermove', (event) => {
+        if (!drag || drag.id !== event.pointerId) return;
+        if (!drag.active) {
+          const dx = Math.abs(event.clientX - drag.x);
+          if (dx < 6 || dx <= Math.abs(event.clientY - drag.y)) return;
+          start();
+        }
         move(event);
       });
-      range.addEventListener('pointermove', (event) => {
-        if (range.hasPointerCapture(event.pointerId)) move(event);
+      images.addEventListener('pointerup', (event) => {
+        if (!drag || drag.id !== event.pointerId) return;
+        if (!drag.active) {
+          start();
+          move(event);
+        }
+        drag = null;
       });
-      range.addEventListener('pointerup', (event) => {
-        if (range.hasPointerCapture(event.pointerId)) range.releasePointerCapture(event.pointerId);
-      });
+      images.addEventListener('pointercancel', () => { drag = null; });
+      images.addEventListener('dragstart', (event) => event.preventDefault());
       const divider = document.createElement('span');
       divider.className = 'image-comparison__divider';
       divider.setAttribute('aria-hidden', 'true');
@@ -136,6 +164,18 @@
       images.append(range);
       images.classList.add('is-interactive');
       update();
-    });
+    };
+    const setupAll = () => document.querySelectorAll('.image-comparison').forEach(setup);
+    setupAll();
+    // Themes that load more posts without a page reload add cards later.
+    let queued = false;
+    new MutationObserver(() => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => {
+        queued = false;
+        setupAll();
+      });
+    }).observe(document.body, {childList: true, subtree: true});
   })();
 </script>
